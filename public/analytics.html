@@ -12,6 +12,12 @@
   a { color: var(--accent); }
   h1 { margin: 0 0 4px; font-size: 24px; }
   .muted { color: var(--muted); }
+  .header { display:flex; align-items:center; gap: 16px; margin-bottom: 18px; }
+  .header .logo { background: #0d1016; border:1px solid var(--border); border-radius: 12px; padding: 10px 14px; display:flex; align-items:center; justify-content:center; min-width:120px; min-height:56px; }
+  .header .logo img { max-height: 40px; max-width: 160px; display:block; }
+  .meta-tags { display:flex; flex-wrap:wrap; gap:6px; margin-top: 8px; }
+  .tag { font-size: 12px; background:#0d1016; border:1px solid var(--border); padding: 4px 10px; border-radius: 999px; }
+  .tag b { color: var(--text); }
   .stats { display:grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 20px 0; }
   @media (max-width: 720px){ .stats { grid-template-columns: 1fr; } }
   .stat { background: var(--card); border:1px solid var(--border); border-radius: 12px; padding: 16px; }
@@ -27,9 +33,15 @@
 </head>
 <body>
 <div class="wrap">
-  <p class="muted"><a href="/">← Back</a></p>
-  <h1 id="title">Analytics</h1>
-  <div class="muted" id="sub"></div>
+  <p class="muted"><a href="/">← Back to generator</a></p>
+  <div class="header">
+    <div class="logo"><img src="/map-logo.png" alt="MAP" onerror="this.style.display='none'" /></div>
+    <div>
+      <h1 id="title">Analytics</h1>
+      <div class="muted" id="sub"></div>
+      <div class="meta-tags" id="tags"></div>
+    </div>
+  </div>
 
   <div class="stats">
     <div class="stat"><div class="num" id="total">—</div><div class="lbl">Total scans</div></div>
@@ -53,15 +65,26 @@
 
 <script>
 const id = new URLSearchParams(location.search).get('id');
-function esc(s){return (s||'').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function esc(s){return (s||'').toString().replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
 (async () => {
   if (!id) { document.getElementById('title').textContent = 'Missing id'; return; }
   const res = await fetch(`/api/stats/${id}`);
   if (!res.ok) { document.getElementById('title').textContent = 'Not found'; return; }
   const d = await res.json();
-  document.getElementById('title').textContent = d.code.label || `QR ${d.code.id}`;
-  document.getElementById('sub').innerHTML = `Destination: <code>${esc(d.code.target_url)}</code> · Tracking: <code>${location.origin}/r/${d.code.id}</code>`;
+  const c = d.code;
+  document.getElementById('title').textContent = c.project || c.label || `QR ${c.id}`;
+  document.getElementById('sub').innerHTML = `Destination: <code>${esc(c.target_url)}</code> · Tracking: <code>${location.origin}/r/${c.id}</code>`;
+
+  const tags = document.getElementById('tags');
+  const dep = c.deployment_detail ? `${c.deployment} (${c.deployment_detail})` : c.deployment;
+  tags.innerHTML = [
+    c.team && `<span class="tag">Team: <b>${esc(c.team)}</b></span>`,
+    c.project && `<span class="tag">Project: <b>${esc(c.project)}</b></span>`,
+    dep && `<span class="tag">Deployment: <b>${esc(dep)}</b></span>`,
+    c.created_at && `<span class="tag">Created: <b>${new Date(c.created_at).toLocaleDateString()}</b></span>`,
+  ].filter(Boolean).join('');
+
   document.getElementById('total').textContent = d.total_scans;
   const today = new Date().toISOString().slice(0,10);
   const todayRow = d.scans_by_day.find(x => x.day === today);

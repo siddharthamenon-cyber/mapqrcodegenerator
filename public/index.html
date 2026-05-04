@@ -3,51 +3,102 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>QR Generator + Analytics</title>
+<title>MAP QR Generator + Analytics</title>
 <style>
-  :root { --bg:#0f1115; --card:#171a21; --text:#e7eaf0; --muted:#8a93a6; --accent:#5b8cff; --border:#262a34; }
+  :root { --bg:#ffffff; --card:#ffffff; --soft:#f6f7f9; --text:#111418; --muted:#6b7280; --accent:#111418; --accent2:#16a34a; --border:#e5e7eb; }
   * { box-sizing: border-box; }
   body { margin:0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; background:var(--bg); color:var(--text); }
-  .wrap { max-width: 980px; margin: 0 auto; padding: 32px 20px 80px; }
-  h1 { margin: 0 0 4px; font-size: 28px; }
-  p.lead { color:var(--muted); margin: 0 0 28px; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 28px 20px 80px; }
+  h1 { margin: 0 0 4px; font-size: 28px; letter-spacing: -0.01em; }
+  p.lead { color:var(--muted); margin: 0 0 24px; }
   .grid { display:grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-  @media (max-width: 760px){ .grid { grid-template-columns: 1fr; } }
-  .card { background: var(--card); border:1px solid var(--border); border-radius: 14px; padding: 20px; }
-  label { display:block; font-size: 13px; color: var(--muted); margin: 12px 0 6px; }
-  input[type=text], input[type=url] { width:100%; padding: 11px 12px; background:#0d1016; color:var(--text); border:1px solid var(--border); border-radius: 8px; font-size:14px; }
+  @media (max-width: 820px){ .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--card); border:1px solid var(--border); border-radius: 14px; padding: 22px; }
+  label { display:block; font-size: 13px; color: var(--muted); margin: 12px 0 6px; font-weight: 500; }
+  input[type=text], input[type=url], select { width:100%; padding: 11px 12px; background:#ffffff; color:var(--text); border:1px solid var(--border); border-radius: 8px; font-size:14px; }
+  input:focus, select:focus { outline: none; border-color: #111418; box-shadow: 0 0 0 3px rgba(17,20,24,0.08); }
+  select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: calc(100% - 18px) 50%, calc(100% - 12px) 50%; background-size: 6px 6px, 6px 6px; background-repeat: no-repeat; padding-right: 32px; }
   input[type=file] { color: var(--muted); font-size: 13px; }
   button { background: var(--accent); color:white; border:0; padding: 11px 16px; border-radius: 8px; font-weight:600; cursor:pointer; font-size: 14px; }
-  button:disabled { opacity: .6; cursor:not-allowed; }
-  .qr { display:flex; align-items:center; justify-content:center; min-height: 280px; background:#0d1016; border-radius: 10px; border:1px solid var(--border); padding: 12px; }
-  .qr canvas { max-width: 100%; height:auto; border-radius: 8px; background:white; }
+  button.secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
+  button.success { background: var(--accent2); }
+  button:disabled { opacity: .5; cursor:not-allowed; }
+  .qr { display:flex; align-items:center; justify-content:center; min-height: 280px; background:var(--soft); border-radius: 10px; border:1px solid var(--border); padding: 12px; }
+  .qr canvas { max-width: 100%; height:auto; border-radius: 8px; background:white; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
   .meta { font-size: 13px; color: var(--muted); margin-top: 12px; word-break: break-all; }
-  .meta code { background: #0d1016; padding: 2px 6px; border-radius: 4px; color: #cfd6e4; }
+  .meta code { background: var(--soft); padding: 2px 6px; border-radius: 4px; color: var(--text); }
   .row { display:flex; gap: 8px; align-items:center; flex-wrap: wrap; }
   .table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
-  .table th, .table td { text-align:left; padding: 8px; border-bottom: 1px solid var(--border); }
+  .table th, .table td { text-align:left; padding: 10px 8px; border-bottom: 1px solid var(--border); }
   .table th { color: var(--muted); font-weight: 500; }
-  a { color: var(--accent); }
-  .err { color:#ff7676; font-size: 13px; margin-top: 8px; }
-  .pill { display:inline-block; background:#0d1016; border:1px solid var(--border); padding: 2px 8px; border-radius: 999px; font-size: 12px; color: var(--muted); }
+  a { color: var(--text); text-decoration: underline; text-decoration-color: var(--border); text-underline-offset: 3px; }
+  a:hover { text-decoration-color: var(--text); }
+  .err { color:#b91c1c; font-size: 13px; margin-top: 8px; }
+  .pill { display:inline-block; background:var(--soft); border:1px solid var(--border); padding: 2px 8px; border-radius: 999px; font-size: 12px; color: var(--muted); }
+  .preview { background:var(--soft); border:1px dashed var(--border); border-radius: 8px; padding: 10px 12px; font-size: 13px; color: var(--muted); margin-top: 6px; }
+  .preview strong { color: var(--text); }
+  .two { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 520px){ .two { grid-template-columns: 1fr; } }
+  .actions { display:flex; gap:8px; flex-wrap:wrap; margin-top: 14px; }
+  .actions a.btn { display:inline-block; text-decoration:none; padding: 11px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; }
+  .actions a.primary { background: var(--accent2); color:white; }
+  .actions a.outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
+  .filters { display:flex; gap:8px; flex-wrap: wrap; align-items:center; margin-top: 8px; }
+  .filters select, .filters input { padding: 8px 10px; font-size: 13px; }
+  .brand { display:flex; align-items:center; gap: 22px; margin-bottom: 24px; padding: 22px 24px; background: #ffffff; border:1px solid var(--border); border-radius: 16px; }
+  .brand .logo-box { display:flex; align-items:center; justify-content:center; min-width: 120px; }
+  .brand .logo-box img { max-height: 88px; max-width: 220px; display:block; }
+  .brand .titles h1 { margin: 0 0 4px; font-size: 26px; }
+  .brand .titles .sub { color: var(--muted); font-size: 13px; }
+  .brand .fallback { font-weight: 800; font-size: 32px; letter-spacing: -0.02em; }
+  .brand .fallback small { display:block; font-size: 11px; font-weight: 500; color: var(--muted); margin-top: 2px; letter-spacing: 0; }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>QR Generator</h1>
-  <p class="lead">Generate trackable QR codes. Every scan goes through a redirect that logs the timestamp, so you get total scans, daily trends, and recent activity.</p>
+  <div class="brand">
+    <div class="logo-box">
+      <img src="/map-logo.png" alt="MAP — Museum of Art &amp; Photography"
+           onerror="this.outerHTML='<div class=&quot;fallback&quot;>MAP<small>Museum of Art &amp; Photography</small></div>'" />
+    </div>
+    <div class="titles">
+      <h1>QR Generator</h1>
+      <div class="sub">Trackable QR codes with structured naming and built-in scan analytics</div>
+    </div>
+  </div>
 
   <div class="grid">
     <div class="card">
       <form id="form">
+        <label for="team">Team</label>
+        <select id="team" required>
+          <option value="">Select team…</option>
+        </select>
+
+        <label for="project">Project name</label>
+        <input type="text" id="project" placeholder="e.g. Visible / Invisible exhibition" required />
+
+        <div class="two">
+          <div>
+            <label for="deployment">Deployment location</label>
+            <select id="deployment" required>
+              <option value="">Select…</option>
+            </select>
+          </div>
+          <div>
+            <label for="deployment_detail">Specifics (optional)</label>
+            <input type="text" id="deployment_detail" placeholder="e.g. Gallery 3, Cubbon Park kiosk, IG bio" />
+          </div>
+        </div>
+
         <label for="url">Destination URL</label>
-        <input type="url" id="url" name="url" placeholder="https://example.com" required />
+        <input type="url" id="url" placeholder="https://map-india.org/..." required />
 
-        <label for="label">Label (optional)</label>
-        <input type="text" id="label" name="label" placeholder="e.g. Spring campaign poster" />
+        <label for="logo">Logo (optional, PNG/JPG, centered on QR)</label>
+        <input type="file" id="logo" accept="image/*" />
 
-        <label for="logo">Logo (optional, PNG/JPG, centered)</label>
-        <input type="file" id="logo" name="logo" accept="image/*" />
+        <label>Generated QR name</label>
+        <div class="preview" id="namePreview"><span class="pill">Fill in the fields above to preview</span></div>
 
         <div style="margin-top:18px" class="row">
           <button type="submit" id="submit">Generate QR</button>
@@ -60,16 +111,25 @@
     <div class="card">
       <div class="qr" id="qr"><span style="color:var(--muted);font-size:13px">Your QR will appear here</span></div>
       <div class="meta" id="meta"></div>
+      <div class="actions" id="actions" style="display:none">
+        <a class="btn primary" id="analyticsBtn" href="#">📊 View Analytics</a>
+        <a class="btn outline" id="downloadBtn" href="#" download>⬇︎ Download PNG</a>
+      </div>
     </div>
   </div>
 
   <div class="card" style="margin-top:20px">
     <div class="row" style="justify-content:space-between">
       <h3 style="margin:0">Your QR codes</h3>
-      <button type="button" id="refresh" style="background:transparent;color:var(--accent);border:1px solid var(--border)">Refresh</button>
+      <button type="button" id="refresh" class="secondary">Refresh</button>
+    </div>
+    <div class="filters">
+      <select id="filterTeam"><option value="">All teams</option></select>
+      <select id="filterDeployment"><option value="">All deployments</option></select>
+      <input type="text" id="filterSearch" placeholder="Search project…" />
     </div>
     <table class="table" id="codes">
-      <thead><tr><th>Label</th><th>Destination</th><th>Scans</th><th>Last scan</th><th></th></tr></thead>
+      <thead><tr><th>Team</th><th>Project</th><th>Deployment</th><th>Scans</th><th>Last scan</th><th>Created</th><th></th></tr></thead>
       <tbody></tbody>
     </table>
   </div>
@@ -77,9 +137,43 @@
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script>
+const TEAMS = ['Admin', 'Conservation', 'Design', 'Development', 'Exhibition', 'Inclusion', 'Marcomms', 'Programmes', 'Tech'];
+const DEPLOYMENTS = ['Website', 'Gallery', 'Physical location outside museum', 'Email / Newsletter', 'Print collateral', 'Social media', 'Other'];
+
+function fillSelect(el, options, allLabel) {
+  const head = allLabel
+    ? `<option value="">${allLabel}</option>`
+    : el.querySelector('option[value=""]')?.outerHTML || '';
+  el.innerHTML = head + options.map(o => `<option value="${o}">${o}</option>`).join('');
+}
+
+fillSelect(document.getElementById('team'), TEAMS);
+fillSelect(document.getElementById('deployment'), DEPLOYMENTS);
+fillSelect(document.getElementById('filterTeam'), TEAMS, 'All teams');
+fillSelect(document.getElementById('filterDeployment'), DEPLOYMENTS, 'All deployments');
+
+const namePreview = document.getElementById('namePreview');
+function updatePreview() {
+  const team = document.getElementById('team').value;
+  const project = document.getElementById('project').value.trim();
+  const deployment = document.getElementById('deployment').value;
+  const detail = document.getElementById('deployment_detail').value.trim();
+  if (!team || !project || !deployment) {
+    namePreview.innerHTML = '<span class="pill">Fill in team, project, and deployment to preview</span>';
+    return;
+  }
+  const dep = detail ? `${deployment} (${detail})` : deployment;
+  namePreview.innerHTML = `<strong>${esc(team)}</strong> — <strong>${esc(project)}</strong> — <strong>${esc(dep)}</strong>`;
+}
+['team','project','deployment','deployment_detail'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updatePreview);
+  document.getElementById(id).addEventListener('change', updatePreview);
+});
+
 const form = document.getElementById('form');
 const qrBox = document.getElementById('qr');
 const meta = document.getElementById('meta');
+const actions = document.getElementById('actions');
 const errEl = document.getElementById('err');
 const submit = document.getElementById('submit');
 
@@ -117,7 +211,6 @@ async function buildQrCanvas(text, logoFile) {
     const y = (size - plate) / 2;
     ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(x, y, plate, plate);
-    // contain-fit the logo into logoSize box
     const ratio = Math.min(logoSize / img.width, logoSize / img.height);
     const w = img.width * ratio, h = img.height * ratio;
     ctx.drawImage(img, x + padding + (logoSize - w) / 2, y + padding + (logoSize - h) / 2, w, h);
@@ -130,14 +223,19 @@ form.addEventListener('submit', async (e) => {
   errEl.textContent = '';
   submit.disabled = true; submit.textContent = 'Generating...';
   try {
-    const url = document.getElementById('url').value.trim();
-    const label = document.getElementById('label').value.trim();
+    const payload = {
+      url: document.getElementById('url').value.trim(),
+      team: document.getElementById('team').value,
+      project: document.getElementById('project').value.trim(),
+      deployment: document.getElementById('deployment').value,
+      deployment_detail: document.getElementById('deployment_detail').value.trim(),
+    };
     const logoFile = document.getElementById('logo').files[0];
 
     const res = await fetch('/api/create', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ url, label }),
+      body: JSON.stringify(payload),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed');
@@ -146,14 +244,18 @@ form.addEventListener('submit', async (e) => {
     qrBox.innerHTML = '';
     qrBox.appendChild(canvas);
     const dataUrl = canvas.toDataURL('image/png');
+
     meta.innerHTML = `
-      <div>Tracking URL: <code>${data.tracking_url}</code></div>
-      <div style="margin-top:6px">Destination: <code>${data.target_url}</code></div>
-      <div style="margin-top:10px">
-        <a href="${dataUrl}" download="qr-${data.id}.png">Download PNG</a>
-        &nbsp;·&nbsp;
-        <a href="${data.analytics_url}">View analytics →</a>
-      </div>`;
+      <div><strong style="color:var(--text)">${esc(data.label)}</strong></div>
+      <div style="margin-top:6px">Tracking URL: <code>${data.tracking_url}</code></div>
+      <div style="margin-top:6px">Destination: <code>${data.target_url}</code></div>`;
+
+    const dl = document.getElementById('downloadBtn');
+    dl.href = dataUrl;
+    dl.download = `qr-${data.team}-${data.project}-${data.id}.png`.replace(/\s+/g, '_');
+    document.getElementById('analyticsBtn').href = data.analytics_url;
+    actions.style.display = 'flex';
+
     loadCodes();
   } catch (err) {
     errEl.textContent = err.message;
@@ -162,21 +264,41 @@ form.addEventListener('submit', async (e) => {
   }
 });
 
+let allCodes = [];
 async function loadCodes() {
   const res = await fetch('/api/codes');
-  const rows = await res.json();
+  allCodes = await res.json();
+  renderCodes();
+}
+function renderCodes() {
+  const team = document.getElementById('filterTeam').value;
+  const dep = document.getElementById('filterDeployment').value;
+  const q = document.getElementById('filterSearch').value.trim().toLowerCase();
+  const rows = allCodes.filter(r =>
+    (!team || r.team === team) &&
+    (!dep || r.deployment === dep) &&
+    (!q || (r.project || '').toLowerCase().includes(q) || (r.label || '').toLowerCase().includes(q))
+  );
   const tbody = document.querySelector('#codes tbody');
-  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="5" style="color:var(--muted)">No codes yet.</td></tr>'; return; }
-  tbody.innerHTML = rows.map(r => `
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="7" style="color:var(--muted)">No codes match.</td></tr>'; return; }
+  tbody.innerHTML = rows.map(r => {
+    const dep = r.deployment_detail ? `${r.deployment} (${r.deployment_detail})` : (r.deployment || '—');
+    return `
     <tr>
-      <td>${r.label ? esc(r.label) : '<span style="color:var(--muted)">—</span>'}</td>
-      <td style="max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><a href="${r.target_url}" target="_blank" rel="noopener">${esc(r.target_url)}</a></td>
+      <td>${esc(r.team || '—')}</td>
+      <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.project || '—')}</td>
+      <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(dep)}</td>
       <td>${r.scan_count}</td>
       <td>${r.last_scan ? new Date(r.last_scan).toLocaleString() : '—'}</td>
-      <td><a href="/analytics.html?id=${r.id}">Analytics</a></td>
-    </tr>`).join('');
+      <td>${r.created_at ? new Date(r.created_at).toLocaleDateString() : '—'}</td>
+      <td><a href="/analytics.html?id=${r.id}">📊 Analytics</a></td>
+    </tr>`;
+  }).join('');
 }
-function esc(s){return s.replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+['filterTeam','filterDeployment','filterSearch'].forEach(id =>
+  document.getElementById(id).addEventListener('input', renderCodes)
+);
+function esc(s){return (s||'').toString().replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 document.getElementById('refresh').addEventListener('click', loadCodes);
 loadCodes();
 </script>
