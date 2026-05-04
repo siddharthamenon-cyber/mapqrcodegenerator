@@ -1,0 +1,7 @@
+[build]
+  publish = "public"
+
+[functions]
+  node_bundler = "esbuild"
+
+# SPA fallback isn't needed; static + functions handle their own paths.

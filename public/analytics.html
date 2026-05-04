@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>QR Analytics</title>
+<style>
+  :root { --bg:#0f1115; --card:#171a21; --text:#e7eaf0; --muted:#8a93a6; --accent:#5b8cff; --border:#262a34; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; background:var(--bg); color:var(--text); }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 32px 20px 80px; }
+  a { color: var(--accent); }
+  h1 { margin: 0 0 4px; font-size: 24px; }
+  .muted { color: var(--muted); }
+  .stats { display:grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 20px 0; }
+  @media (max-width: 720px){ .stats { grid-template-columns: 1fr; } }
+  .stat { background: var(--card); border:1px solid var(--border); border-radius: 12px; padding: 16px; }
+  .stat .num { font-size: 30px; font-weight: 700; }
+  .stat .lbl { color: var(--muted); font-size: 13px; }
+  .card { background: var(--card); border:1px solid var(--border); border-radius: 14px; padding: 18px; margin-top: 18px; }
+  .table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .table th, .table td { text-align:left; padding: 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .table th { color: var(--muted); font-weight: 500; }
+  .bar { height: 14px; background: var(--accent); border-radius: 4px; }
+  code { background: #0d1016; padding: 2px 6px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="muted"><a href="/">← Back</a></p>
+  <h1 id="title">Analytics</h1>
+  <div class="muted" id="sub"></div>
+
+  <div class="stats">
+    <div class="stat"><div class="num" id="total">—</div><div class="lbl">Total scans</div></div>
+    <div class="stat"><div class="num" id="today">—</div><div class="lbl">Scans today</div></div>
+    <div class="stat"><div class="num" id="last">—</div><div class="lbl">Last scan</div></div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin:0 0 10px">Scans per day (last 30)</h3>
+    <table class="table" id="byday"></table>
+  </div>
+
+  <div class="card">
+    <h3 style="margin:0 0 10px">Recent scans</h3>
+    <table class="table" id="recent">
+      <thead><tr><th>When</th><th>IP</th><th>User agent</th><th>Referer</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const id = new URLSearchParams(location.search).get('id');
+function esc(s){return (s||'').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+(async () => {
+  if (!id) { document.getElementById('title').textContent = 'Missing id'; return; }
+  const res = await fetch(`/api/stats/${id}`);
+  if (!res.ok) { document.getElementById('title').textContent = 'Not found'; return; }
+  const d = await res.json();
+  document.getElementById('title').textContent = d.code.label || `QR ${d.code.id}`;
+  document.getElementById('sub').innerHTML = `Destination: <code>${esc(d.code.target_url)}</code> · Tracking: <code>${location.origin}/r/${d.code.id}</code>`;
+  document.getElementById('total').textContent = d.total_scans;
+  const today = new Date().toISOString().slice(0,10);
+  const todayRow = d.scans_by_day.find(x => x.day === today);
+  document.getElementById('today').textContent = todayRow ? todayRow.count : 0;
+  document.getElementById('last').textContent = d.recent_scans[0] ? new Date(d.recent_scans[0].scanned_at).toLocaleString() : '—';
+
+  const max = Math.max(1, ...d.scans_by_day.map(x => x.count));
+  document.getElementById('byday').innerHTML = `
+    <thead><tr><th>Day</th><th>Count</th><th></th></tr></thead>
+    <tbody>${d.scans_by_day.map(x => `
+      <tr><td>${x.day}</td><td>${x.count}</td><td><div class="bar" style="width:${(x.count/max*100).toFixed(1)}%"></div></td></tr>`).join('') || '<tr><td colspan="3" class="muted">No scans yet.</td></tr>'}
+    </tbody>`;
+
+  const tbody = document.querySelector('#recent tbody');
+  tbody.innerHTML = d.recent_scans.length ? d.recent_scans.map(s => `
+    <tr>
+      <td>${new Date(s.scanned_at).toLocaleString()}</td>
+      <td>${esc(s.ip)}</td>
+      <td style="max-width:340px;overflow:hidden;text-overflow:ellipsis">${esc(s.user_agent)}</td>
+      <td>${esc(s.referer) || '—'}</td>
+    </tr>`).join('') : '<tr><td colspan="4" class="muted">No scans yet — share your QR to start tracking.</td></tr>';
+})();
+</script>
+</body>
+</html>

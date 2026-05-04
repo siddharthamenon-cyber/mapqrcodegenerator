@@ -1,0 +1,17 @@
+{
+  "name": "qr-analytics-netlify",
+  "version": "1.0.0",
+  "description": "QR generator with scan analytics, deployed on Netlify (Functions + Blobs)",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "netlify dev",
+    "deploy": "netlify deploy --build --prod"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  },
+  "devDependencies": {
+    "netlify-cli": "^17.36.0"
+  }
+}

@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>QR Generator + Analytics</title>
+<style>
+  :root { --bg:#0f1115; --card:#171a21; --text:#e7eaf0; --muted:#8a93a6; --accent:#5b8cff; --border:#262a34; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; background:var(--bg); color:var(--text); }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 32px 20px 80px; }
+  h1 { margin: 0 0 4px; font-size: 28px; }
+  p.lead { color:var(--muted); margin: 0 0 28px; }
+  .grid { display:grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 760px){ .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--card); border:1px solid var(--border); border-radius: 14px; padding: 20px; }
+  label { display:block; font-size: 13px; color: var(--muted); margin: 12px 0 6px; }
+  input[type=text], input[type=url] { width:100%; padding: 11px 12px; background:#0d1016; color:var(--text); border:1px solid var(--border); border-radius: 8px; font-size:14px; }
+  input[type=file] { color: var(--muted); font-size: 13px; }
+  button { background: var(--accent); color:white; border:0; padding: 11px 16px; border-radius: 8px; font-weight:600; cursor:pointer; font-size: 14px; }
+  button:disabled { opacity: .6; cursor:not-allowed; }
+  .qr { display:flex; align-items:center; justify-content:center; min-height: 280px; background:#0d1016; border-radius: 10px; border:1px solid var(--border); padding: 12px; }
+  .qr canvas { max-width: 100%; height:auto; border-radius: 8px; background:white; }
+  .meta { font-size: 13px; color: var(--muted); margin-top: 12px; word-break: break-all; }
+  .meta code { background: #0d1016; padding: 2px 6px; border-radius: 4px; color: #cfd6e4; }
+  .row { display:flex; gap: 8px; align-items:center; flex-wrap: wrap; }
+  .table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+  .table th, .table td { text-align:left; padding: 8px; border-bottom: 1px solid var(--border); }
+  .table th { color: var(--muted); font-weight: 500; }
+  a { color: var(--accent); }
+  .err { color:#ff7676; font-size: 13px; margin-top: 8px; }
+  .pill { display:inline-block; background:#0d1016; border:1px solid var(--border); padding: 2px 8px; border-radius: 999px; font-size: 12px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>QR Generator</h1>
+  <p class="lead">Generate trackable QR codes. Every scan goes through a redirect that logs the timestamp, so you get total scans, daily trends, and recent activity.</p>
+
+  <div class="grid">
+    <div class="card">
+      <form id="form">
+        <label for="url">Destination URL</label>
+        <input type="url" id="url" name="url" placeholder="https://example.com" required />
+
+        <label for="label">Label (optional)</label>
+        <input type="text" id="label" name="label" placeholder="e.g. Spring campaign poster" />
+
+        <label for="logo">Logo (optional, PNG/JPG, centered)</label>
+        <input type="file" id="logo" name="logo" accept="image/*" />
+
+        <div style="margin-top:18px" class="row">
+          <button type="submit" id="submit">Generate QR</button>
+          <span class="pill">High error-correction so logo doesn't break scanning</span>
+        </div>
+        <div class="err" id="err"></div>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="qr" id="qr"><span style="color:var(--muted);font-size:13px">Your QR will appear here</span></div>
+      <div class="meta" id="meta"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:20px">
+    <div class="row" style="justify-content:space-between">
+      <h3 style="margin:0">Your QR codes</h3>
+      <button type="button" id="refresh" style="background:transparent;color:var(--accent);border:1px solid var(--border)">Refresh</button>
+    </div>
+    <table class="table" id="codes">
+      <thead><tr><th>Label</th><th>Destination</th><th>Scans</th><th>Last scan</th><th></th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script>
+const form = document.getElementById('form');
+const qrBox = document.getElementById('qr');
+const meta = document.getElementById('meta');
+const errEl = document.getElementById('err');
+const submit = document.getElementById('submit');
+
+function readFileAsImage(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = reader.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function buildQrCanvas(text, logoFile) {
+  const size = 600;
+  const canvas = document.createElement('canvas');
+  canvas.width = size; canvas.height = size;
+  await QRCode.toCanvas(canvas, text, {
+    errorCorrectionLevel: 'H',
+    margin: 2,
+    width: size,
+    color: { dark: '#111111', light: '#FFFFFF' },
+  });
+  if (logoFile) {
+    const img = await readFileAsImage(logoFile);
+    const ctx = canvas.getContext('2d');
+    const logoSize = Math.round(size * 0.22);
+    const padding = Math.round(logoSize * 0.12);
+    const plate = logoSize + padding * 2;
+    const x = (size - plate) / 2;
+    const y = (size - plate) / 2;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(x, y, plate, plate);
+    // contain-fit the logo into logoSize box
+    const ratio = Math.min(logoSize / img.width, logoSize / img.height);
+    const w = img.width * ratio, h = img.height * ratio;
+    ctx.drawImage(img, x + padding + (logoSize - w) / 2, y + padding + (logoSize - h) / 2, w, h);
+  }
+  return canvas;
+}
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  errEl.textContent = '';
+  submit.disabled = true; submit.textContent = 'Generating...';
+  try {
+    const url = document.getElementById('url').value.trim();
+    const label = document.getElementById('label').value.trim();
+    const logoFile = document.getElementById('logo').files[0];
+
+    const res = await fetch('/api/create', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ url, label }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
+
+    const canvas = await buildQrCanvas(data.tracking_url, logoFile);
+    qrBox.innerHTML = '';
+    qrBox.appendChild(canvas);
+    const dataUrl = canvas.toDataURL('image/png');
+    meta.innerHTML = `
+      <div>Tracking URL: <code>${data.tracking_url}</code></div>
+      <div style="margin-top:6px">Destination: <code>${data.target_url}</code></div>
+      <div style="margin-top:10px">
+        <a href="${dataUrl}" download="qr-${data.id}.png">Download PNG</a>
+        &nbsp;·&nbsp;
+        <a href="${data.analytics_url}">View analytics →</a>
+      </div>`;
+    loadCodes();
+  } catch (err) {
+    errEl.textContent = err.message;
+  } finally {
+    submit.disabled = false; submit.textContent = 'Generate QR';
+  }
+});
+
+async function loadCodes() {
+  const res = await fetch('/api/codes');
+  const rows = await res.json();
+  const tbody = document.querySelector('#codes tbody');
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="5" style="color:var(--muted)">No codes yet.</td></tr>'; return; }
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td>${r.label ? esc(r.label) : '<span style="color:var(--muted)">—</span>'}</td>
+      <td style="max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><a href="${r.target_url}" target="_blank" rel="noopener">${esc(r.target_url)}</a></td>
+      <td>${r.scan_count}</td>
+      <td>${r.last_scan ? new Date(r.last_scan).toLocaleString() : '—'}</td>
+      <td><a href="/analytics.html?id=${r.id}">Analytics</a></td>
+    </tr>`).join('');
+}
+function esc(s){return s.replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+document.getElementById('refresh').addEventListener('click', loadCodes);
+loadCodes();
+</script>
+</body>
+</html>
