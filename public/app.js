@@ -1,6 +1,22 @@
 const TEAMS = ['Admin', 'Conservation', 'Design', 'Development', 'Exhibition', 'Inclusion', 'Marcomms', 'Programmes', 'Tech'];
 const DEPLOYMENTS = ['Website', 'Gallery', 'Physical location outside museum', 'Email / Newsletter', 'Print collateral', 'Social media', 'Other'];
 
+// MAP UTM conventions: medium is always 'qr' for QR codes; source is qr_<placement>.
+const UTM_SOURCE_BY_DEPLOYMENT = {
+  'Website': 'qr_web',
+  'Gallery': 'qr_gallery',
+  'Physical location outside museum': 'qr_outdoor',
+  'Email / Newsletter': 'qr_email',
+  'Print collateral': 'qr_print',
+  'Social media': 'qr_social',
+  'Other': 'qr',
+};
+
+// Five golden rules in code: no caps, no spaces, no special chars (underscores allowed).
+function sanitizeUtm(v) {
+  return (v || '').toString().toLowerCase().trim().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+}
+
 function fillSelect(el, options, allLabel) {
   const head = allLabel
     ? `<option value="">${allLabel}</option>`
@@ -30,6 +46,103 @@ function updatePreview() {
   document.getElementById(id).addEventListener('input', updatePreview);
   document.getElementById(id).addEventListener('change', updatePreview);
 });
+
+// ---------- UTM section ----------
+const utmEnabledEl = document.getElementById('utmEnabled');
+const utmBlock = document.querySelector('.utm-block');
+const utmSourceEl = document.getElementById('utm_source');
+const utmMediumEl = document.getElementById('utm_medium');
+const utmCampaignEl = document.getElementById('utm_campaign');
+const utmContentEl = document.getElementById('utm_content');
+const utmPreviewEl = document.getElementById('utmPreview');
+const urlEl = document.getElementById('url');
+const urlWarning = document.getElementById('urlWarning');
+
+const utmTouched = { source: false, medium: false, campaign: false, content: false };
+[utmSourceEl, utmMediumEl, utmCampaignEl, utmContentEl].forEach(el => {
+  const key = el.id.replace('utm_', '');
+  el.addEventListener('input', () => { utmTouched[key] = true; });
+});
+
+function autofillUtm() {
+  const deployment = document.getElementById('deployment').value;
+  const project = document.getElementById('project').value.trim();
+  const detail = document.getElementById('deployment_detail').value.trim();
+  if (!utmTouched.medium) utmMediumEl.value = 'qr';
+  if (!utmTouched.source && deployment) utmSourceEl.value = UTM_SOURCE_BY_DEPLOYMENT[deployment] || 'qr';
+  if (!utmTouched.campaign && project) utmCampaignEl.value = sanitizeUtm(project);
+  if (!utmTouched.content && detail) utmContentEl.value = sanitizeUtm(detail);
+  // Live-sanitize whatever's in the fields (covers paste).
+  utmSourceEl.value = sanitizeUtm(utmSourceEl.value);
+  utmMediumEl.value = sanitizeUtm(utmMediumEl.value);
+  utmCampaignEl.value = sanitizeUtm(utmCampaignEl.value);
+  utmContentEl.value = sanitizeUtm(utmContentEl.value);
+  updateUtmPreview();
+}
+
+['team', 'project', 'deployment', 'deployment_detail'].forEach(id => {
+  document.getElementById(id).addEventListener('input', autofillUtm);
+  document.getElementById(id).addEventListener('change', autofillUtm);
+});
+
+function buildFinalUrl(rawUrl, params) {
+  try {
+    const u = new URL(rawUrl);
+    Object.entries(params).forEach(([k, v]) => { if (v) u.searchParams.set(k, v); });
+    return u.toString();
+  } catch { return ''; }
+}
+
+function updateUtmPreview() {
+  const enabled = utmEnabledEl.checked;
+  utmBlock.classList.toggle('disabled', !enabled);
+  if (!enabled) {
+    utmPreviewEl.innerHTML = '<span class="pill">UTM tracking disabled — destination URL will be used as-is</span>';
+    return;
+  }
+  const url = urlEl.value.trim();
+  const s = sanitizeUtm(utmSourceEl.value);
+  const m = sanitizeUtm(utmMediumEl.value);
+  const c = sanitizeUtm(utmCampaignEl.value);
+  const ct = sanitizeUtm(utmContentEl.value);
+  if (!url || !s || !m || !c) {
+    utmPreviewEl.innerHTML = '<span class="pill">Fill destination URL + source, medium, campaign to preview</span>';
+    return;
+  }
+  const final = buildFinalUrl(url, { utm_source: s, utm_medium: m, utm_campaign: c, utm_content: ct });
+  utmPreviewEl.innerHTML = final
+    ? `<code style="word-break:break-all">${esc(final)}</code>`
+    : '<span class="pill">Invalid URL</span>';
+}
+
+function checkExternalRule() {
+  const url = urlEl.value.trim();
+  if (!url) { urlWarning.style.display = 'none'; return; }
+  try {
+    const host = new URL(url).hostname;
+    const isMap = /(^|\.)map-india\.org$/i.test(host);
+    if (!isMap && utmEnabledEl.checked) {
+      urlWarning.style.display = 'block';
+      urlWarning.textContent = `Heads-up: UTMs only register in MAP's GA4 when the visitor lands on map-india.org. ${host} won't be tracked there.`;
+    } else {
+      urlWarning.style.display = 'none';
+    }
+  } catch { urlWarning.style.display = 'none'; }
+}
+
+[utmEnabledEl, utmSourceEl, utmMediumEl, utmCampaignEl, utmContentEl, urlEl].forEach(el => {
+  el.addEventListener('input', () => { updateUtmPreview(); checkExternalRule(); });
+  el.addEventListener('change', () => { updateUtmPreview(); checkExternalRule(); });
+});
+
+// Sanitize on blur so users see exactly what'll be sent.
+[utmSourceEl, utmMediumEl, utmCampaignEl, utmContentEl].forEach(el => {
+  el.addEventListener('blur', () => { el.value = sanitizeUtm(el.value); updateUtmPreview(); });
+});
+
+// Initialize defaults.
+utmMediumEl.value = 'qr';
+updateUtmPreview();
 
 const form = document.getElementById('form');
 const qrBox = document.getElementById('qr');
@@ -91,6 +204,12 @@ form.addEventListener('submit', async (e) => {
       deployment: document.getElementById('deployment').value,
       deployment_detail: document.getElementById('deployment_detail').value.trim(),
     };
+    if (utmEnabledEl.checked) {
+      payload.utm_source = sanitizeUtm(utmSourceEl.value);
+      payload.utm_medium = sanitizeUtm(utmMediumEl.value);
+      payload.utm_campaign = sanitizeUtm(utmCampaignEl.value);
+      payload.utm_content = sanitizeUtm(utmContentEl.value);
+    }
     const logoFile = document.getElementById('logo').files[0];
 
     const res = await fetch('/api/create', {
@@ -106,10 +225,14 @@ form.addEventListener('submit', async (e) => {
     qrBox.appendChild(canvas);
     const dataUrl = canvas.toDataURL('image/png');
 
+    const finalLine = data.utm
+      ? `<div style="margin-top:6px">Tagged destination: <code>${esc(data.final_url)}</code></div>`
+      : '';
     meta.innerHTML = `
       <div><strong style="color:var(--text)">${esc(data.label)}</strong></div>
       <div style="margin-top:6px">Tracking URL: <code>${data.tracking_url}</code></div>
-      <div style="margin-top:6px">Destination: <code>${data.target_url}</code></div>`;
+      <div style="margin-top:6px">Destination: <code>${data.target_url}</code></div>
+      ${finalLine}`;
 
     const dl = document.getElementById('downloadBtn');
     dl.href = dataUrl;

@@ -23,6 +23,10 @@ function esc(s) {
     c.team && `<span class="tag">Team: <b>${esc(c.team)}</b></span>`,
     c.project && `<span class="tag">Project: <b>${esc(c.project)}</b></span>`,
     dep && `<span class="tag">Deployment: <b>${esc(dep)}</b></span>`,
+    c.utm && `<span class="tag">utm_source: <b>${esc(c.utm.source)}</b></span>`,
+    c.utm && `<span class="tag">utm_medium: <b>${esc(c.utm.medium)}</b></span>`,
+    c.utm && `<span class="tag">utm_campaign: <b>${esc(c.utm.campaign)}</b></span>`,
+    c.utm && c.utm.content && `<span class="tag">utm_content: <b>${esc(c.utm.content)}</b></span>`,
     c.created_at && `<span class="tag">Created: <b>${new Date(c.created_at).toLocaleDateString()}</b></span>`,
   ].filter(Boolean).join('');
 

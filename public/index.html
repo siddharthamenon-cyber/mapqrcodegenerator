@@ -47,6 +47,46 @@
 
         <label for="url">Destination URL</label>
         <input type="url" id="url" placeholder="https://map-india.org/..." required />
+        <div id="urlWarning" class="warn" style="display:none"></div>
+
+        <div class="utm-block">
+          <label class="row" style="justify-content:space-between;align-items:center;margin-top:14px">
+            <span style="display:flex;align-items:center;gap:8px;color:var(--text);font-weight:600;font-size:14px">
+              UTM tracking <span class="pill">recommended for GA4</span>
+            </span>
+            <span class="row" style="gap:6px"><input type="checkbox" id="utmEnabled" checked style="width:auto" /> <span style="font-size:12px">Enabled</span></span>
+          </label>
+          <div id="utmFields">
+            <div class="two">
+              <div>
+                <label for="utm_source">utm_source <span class="hint">where</span></label>
+                <input type="text" id="utm_source" placeholder="qr_gallery" />
+              </div>
+              <div>
+                <label for="utm_medium">utm_medium <span class="hint">how</span></label>
+                <input type="text" id="utm_medium" placeholder="qr" />
+              </div>
+            </div>
+            <div class="two">
+              <div>
+                <label for="utm_campaign">utm_campaign <span class="hint">what</span></label>
+                <input type="text" id="utm_campaign" placeholder="holi_2026" />
+              </div>
+              <div>
+                <label for="utm_content">utm_content <span class="hint">which (optional)</span></label>
+                <input type="text" id="utm_content" placeholder="entrance_poster" />
+              </div>
+            </div>
+            <label>Final tagged URL</label>
+            <div class="preview" id="utmPreview"><span class="pill">Fill destination + UTM fields to preview</span></div>
+            <div class="rules">
+              <span class="rule">no caps</span>
+              <span class="rule">no spaces</span>
+              <span class="rule">underscores only</span>
+              <span class="rule">external links only</span>
+            </div>
+          </div>
+        </div>
 
         <label for="logo">Logo (optional, PNG/JPG, centered on QR)</label>
         <input type="file" id="logo" accept="image/*" />
