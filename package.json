@@ -1,7 +1,7 @@
 {
   "name": "qr-analytics-netlify",
   "version": "1.0.0",
-  "description": "QR generator with scan analytics, deployed on Netlify (Functions + Blobs)",
+  "description": "MAP UTM & QR Code Builder. Functions on Netlify, data in Supabase, shortening via TinyURL or Bit.ly.",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,7 +9,7 @@
     "deploy": "netlify deploy --build --prod"
   },
   "dependencies": {
-    "@netlify/blobs": "^8.1.0"
+    "@supabase/supabase-js": "^2.45.0"
   },
   "devDependencies": {
     "netlify-cli": "^17.36.0"

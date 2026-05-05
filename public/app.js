@@ -150,15 +150,16 @@ form.addEventListener('submit', async (e) => {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed');
 
-    const canvas = await buildQrCanvas(data.tracking_url, logoFile);
+    const trackedForQr = data.short_url || data.tracking_url;
+    const canvas = await buildQrCanvas(trackedForQr, logoFile);
     qrBox.innerHTML = '';
     qrBox.appendChild(canvas);
     const dataUrl = canvas.toDataURL('image/png');
 
     meta.innerHTML = `
       <div><strong style="color:var(--text)">${esc(data.label)}</strong></div>
-      <div style="margin-top:6px">Tracking URL: <code>${data.tracking_url}</code></div>
-      <div style="margin-top:6px">Destination: <code>${data.target_url}</code></div>`;
+      <div style="margin-top:6px">Tracked link: <code>${esc(trackedForQr)}</code></div>
+      <div style="margin-top:6px">Destination: <code>${esc(data.target_url)}</code></div>`;
 
     const dl = document.getElementById('downloadBtn');
     dl.href = dataUrl;
@@ -221,7 +222,7 @@ function uAutofill() {
   if (!uTouched.medium && defaults.medium) u.medium.value = defaults.medium;
   if (!uTouched.source && defaults.source) u.source.value = defaults.source;
   if (!uTouched.campaign && u.project.value.trim()) u.campaign.value = sanitizeUtm(u.project.value);
-  if (!uTouched.content && u.detail.value.trim()) u.content.value = sanitizeUtm(u.detail.value);
+  // utm_content is intentionally NOT auto-filled — user must opt in by typing.
   u.source.value = sanitizeUtm(u.source.value);
   u.medium.value = sanitizeUtm(u.medium.value);
   u.campaign.value = sanitizeUtm(u.campaign.value);
@@ -306,13 +307,16 @@ async function uSubmit({ withQr }) {
     u.resultEmpty.hidden = true;
     u.resultLive.hidden = false;
     u.resultLabel.textContent = data.label;
-    u.resultTracked.value = data.tracking_url;
+    // Prefer the short URL for the "tracked link" display; fall back to /r/:id.
+    const trackedDisplay = data.short_url || data.tracking_url;
+    u.resultTracked.value = trackedDisplay;
     u.resultTagged.value = data.final_url || data.target_url;
     u.analyticsBtn.href = data.analytics_url;
 
     if (withQr) {
       const logoFile = u.logo.files[0];
-      await buildQrCanvas(data.tracking_url, logoFile, u.qrCanvas);
+      // Encode the short URL when available — denser QRs scan more reliably.
+      await buildQrCanvas(trackedDisplay, logoFile, u.qrCanvas);
       u.qrWrap.hidden = false;
       u.downloadBtn.hidden = false;
       u.downloadBtn.href = u.qrCanvas.toDataURL('image/png');
@@ -320,8 +324,8 @@ async function uSubmit({ withQr }) {
     } else {
       u.qrWrap.hidden = true;
       u.downloadBtn.hidden = true;
-      // Auto-copy the tracked URL on save & copy.
-      copyToClipboard(data.tracking_url, u.copyTracked);
+      // Auto-copy the UTM tagged URL on Save & Copy (per spec).
+      copyToClipboard(u.resultTagged.value, u.saveBtn);
     }
 
     loadCodes();

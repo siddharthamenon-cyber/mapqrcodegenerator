@@ -70,8 +70,8 @@
                 <input type="text" id="u_utm_campaign" placeholder="holi_2026" required />
               </div>
               <div>
-                <label for="u_utm_content">utm_content <span class="hint">which (optional)</span></label>
-                <input type="text" id="u_utm_content" placeholder="bio_button" />
+                <label for="u_utm_content">utm_content <span class="hint">which (optional, manual)</span></label>
+                <input type="text" id="u_utm_content" placeholder="bio_button (leave blank if not needed)" />
               </div>
             </div>
             <div class="rules">
@@ -114,16 +114,16 @@
           <div style="font-size:13px;color:var(--muted)">Saved</div>
           <div id="u_resultLabel" style="font-weight:600;font-size:16px;margin-top:2px;color:var(--text)"></div>
 
-          <label style="margin-top:14px">Tracked link <span class="hint">use this for analytics</span></label>
-          <div class="copy-row">
-            <input type="text" id="u_resultTracked" readonly />
-            <button type="button" id="u_copyTracked">Copy</button>
-          </div>
-
-          <label>Direct tagged URL <span class="hint">no scan tracking, GA4 only</span></label>
+          <label style="margin-top:14px">Tagged URL <span class="hint">copied automatically · use this in posts &amp; emails</span></label>
           <div class="copy-row">
             <input type="text" id="u_resultTagged" readonly />
-            <button type="button" id="u_copyTagged" class="secondary">Copy</button>
+            <button type="button" id="u_copyTagged">Copy</button>
+          </div>
+
+          <label>Short tracked link <span class="hint">scan analytics · for QRs &amp; print</span></label>
+          <div class="copy-row">
+            <input type="text" id="u_resultTracked" readonly />
+            <button type="button" id="u_copyTracked" class="secondary">Copy</button>
           </div>
 
           <div id="u_qrWrap" hidden style="margin-top:16px">
