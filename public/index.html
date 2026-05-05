@@ -21,6 +21,12 @@
     </div>
   </div>
 
+  <div class="tabs" role="tablist">
+    <button class="tab active" type="button" data-tab="qr" role="tab">📱 QR Generator</button>
+    <button class="tab" type="button" data-tab="utm" role="tab">🔗 UTM Builder</button>
+  </div>
+
+  <div class="tab-panel" id="panel-qr">
   <div class="grid">
     <div class="card">
       <form id="form">
@@ -111,6 +117,88 @@
       </div>
     </div>
   </div>
+  </div><!-- /panel-qr -->
+
+  <div class="tab-panel" id="panel-utm" hidden>
+    <div class="grid">
+      <div class="card">
+        <form id="utmForm">
+          <label for="u_team">Team</label>
+          <select id="u_team" required></select>
+
+          <label for="u_project">Project name</label>
+          <input type="text" id="u_project" placeholder="e.g. Holi 2026" required />
+
+          <div class="two">
+            <div>
+              <label for="u_deployment">Where will this link live?</label>
+              <select id="u_deployment" required></select>
+            </div>
+            <div>
+              <label for="u_deployment_detail">Specifics (optional)</label>
+              <input type="text" id="u_deployment_detail" placeholder="e.g. Instagram bio, December newsletter" />
+            </div>
+          </div>
+
+          <label for="u_url">Destination URL <span class="hint">where the link points to</span></label>
+          <input type="url" id="u_url" placeholder="https://map-india.org/..." required />
+          <div id="u_urlWarning" class="warn" style="display:none"></div>
+
+          <div class="utm-block" style="margin-top:6px">
+            <div style="font-weight:600;font-size:14px;color:var(--text);margin-bottom:6px">UTM parameters</div>
+            <div class="two">
+              <div>
+                <label for="u_utm_source">utm_source <span class="hint">where</span></label>
+                <input type="text" id="u_utm_source" placeholder="instagram" required />
+              </div>
+              <div>
+                <label for="u_utm_medium">utm_medium <span class="hint">how</span></label>
+                <input type="text" id="u_utm_medium" placeholder="social" required />
+              </div>
+            </div>
+            <div class="two">
+              <div>
+                <label for="u_utm_campaign">utm_campaign <span class="hint">what</span></label>
+                <input type="text" id="u_utm_campaign" placeholder="holi_2026" required />
+              </div>
+              <div>
+                <label for="u_utm_content">utm_content <span class="hint">which (optional)</span></label>
+                <input type="text" id="u_utm_content" placeholder="bio_button" />
+              </div>
+            </div>
+            <div class="rules">
+              <span class="rule">no caps</span>
+              <span class="rule">no spaces</span>
+              <span class="rule">underscores only</span>
+              <span class="rule">external links only</span>
+            </div>
+          </div>
+
+          <label>Tagged URL</label>
+          <div class="preview" id="u_preview"><span class="pill">Fill the fields above to preview</span></div>
+
+          <div class="row" style="margin-top:18px;gap:8px">
+            <button type="button" id="u_copyBtn">📋 Copy tagged URL</button>
+            <button type="button" id="u_qrBtn" class="secondary">📱 Generate as QR →</button>
+          </div>
+          <div class="err" id="u_err"></div>
+        </form>
+      </div>
+
+      <div class="card">
+        <div style="font-size:13px;color:var(--muted);margin-bottom:8px">How to use a tagged URL</div>
+        <ol style="margin:0;padding-left:18px;font-size:13px;line-height:1.7;color:var(--text)">
+          <li>Build the link with the form on the left.</li>
+          <li>Click <strong>Copy tagged URL</strong>, paste into Mailchimp, Linktree, ad copy, or wherever the link lives.</li>
+          <li>Going on a printed flyer or wall? Click <strong>Generate as QR</strong> — it switches to the QR Generator with everything prefilled.</li>
+          <li>Update the tracker with status, owner, and date-live.</li>
+        </ol>
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);font-size:12px;color:var(--muted)">
+          UTMs only register in MAP's GA4 when the visitor lands on <code>map-india.org</code>. External destinations (Linktree, partner sites) won't be tracked there.
+        </div>
+      </div>
+    </div>
+  </div><!-- /panel-utm -->
 
   <div class="card" style="margin-top:20px">
     <div class="row" style="justify-content:space-between">

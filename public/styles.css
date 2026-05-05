@@ -138,6 +138,13 @@ a:hover { text-decoration-color: var(--text); }
 .bar { height: 14px; background: var(--accent); border-radius: 4px; }
 .muted { color: var(--muted); }
 
+/* Tab strip */
+.tabs { display: flex; gap: 4px; margin-bottom: 18px; padding: 4px; background: var(--soft); border: 1px solid var(--border); border-radius: 12px; }
+.tab { flex: 1; background: transparent; color: var(--muted); border: 0; padding: 11px 14px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; transition: background 0.15s, color 0.15s; }
+.tab:hover { color: var(--text); }
+.tab.active { background: #ffffff; color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+.tab-panel[hidden] { display: none; }
+
 /* UTM block */
 .utm-block { background: var(--soft); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-top: 6px; }
 .utm-block .hint { color: var(--muted); font-weight: 400; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; margin-left: 4px; }

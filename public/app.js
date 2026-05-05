@@ -144,6 +144,134 @@ function checkExternalRule() {
 utmMediumEl.value = 'qr';
 updateUtmPreview();
 
+// ---------- Tabs ----------
+const tabs = document.querySelectorAll('.tab');
+const panels = { qr: document.getElementById('panel-qr'), utm: document.getElementById('panel-utm') };
+function activateTab(name) {
+  tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  Object.entries(panels).forEach(([k, el]) => { el.hidden = (k !== name); });
+}
+tabs.forEach(t => t.addEventListener('click', () => activateTab(t.dataset.tab)));
+
+// ---------- UTM Builder (standalone tab) ----------
+fillSelect(document.getElementById('u_team'), TEAMS);
+document.getElementById('u_team').firstElementChild.textContent = 'Select team…';
+fillSelect(document.getElementById('u_deployment'), DEPLOYMENTS);
+document.getElementById('u_deployment').firstElementChild.textContent = 'Select…';
+
+const u = {
+  team: document.getElementById('u_team'),
+  project: document.getElementById('u_project'),
+  deployment: document.getElementById('u_deployment'),
+  detail: document.getElementById('u_deployment_detail'),
+  url: document.getElementById('u_url'),
+  source: document.getElementById('u_utm_source'),
+  medium: document.getElementById('u_utm_medium'),
+  campaign: document.getElementById('u_utm_campaign'),
+  content: document.getElementById('u_utm_content'),
+  preview: document.getElementById('u_preview'),
+  warn: document.getElementById('u_urlWarning'),
+  err: document.getElementById('u_err'),
+  copyBtn: document.getElementById('u_copyBtn'),
+  qrBtn: document.getElementById('u_qrBtn'),
+};
+
+const uTouched = { source: false, medium: false, campaign: false, content: false };
+[['source', u.source], ['medium', u.medium], ['campaign', u.campaign], ['content', u.content]].forEach(([k, el]) => {
+  el.addEventListener('input', () => { uTouched[k] = true; });
+});
+
+function uAutofill() {
+  if (!uTouched.medium) u.medium.value = 'qr';
+  if (!uTouched.source && u.deployment.value) u.source.value = UTM_SOURCE_BY_DEPLOYMENT[u.deployment.value] || 'qr';
+  if (!uTouched.campaign && u.project.value.trim()) u.campaign.value = sanitizeUtm(u.project.value);
+  if (!uTouched.content && u.detail.value.trim()) u.content.value = sanitizeUtm(u.detail.value);
+  u.source.value = sanitizeUtm(u.source.value);
+  u.medium.value = sanitizeUtm(u.medium.value);
+  u.campaign.value = sanitizeUtm(u.campaign.value);
+  u.content.value = sanitizeUtm(u.content.value);
+  uUpdatePreview();
+  uCheckExternal();
+}
+['team', 'project', 'deployment', 'detail', 'url', 'source', 'medium', 'campaign', 'content'].forEach(k => {
+  u[k].addEventListener('input', uAutofill);
+  u[k].addEventListener('change', uAutofill);
+});
+[u.source, u.medium, u.campaign, u.content].forEach(el => {
+  el.addEventListener('blur', () => { el.value = sanitizeUtm(el.value); uUpdatePreview(); });
+});
+
+function uTaggedUrl() {
+  const url = u.url.value.trim();
+  const s = sanitizeUtm(u.source.value);
+  const m = sanitizeUtm(u.medium.value);
+  const c = sanitizeUtm(u.campaign.value);
+  const ct = sanitizeUtm(u.content.value);
+  if (!url || !s || !m || !c) return '';
+  return buildFinalUrl(url, { utm_source: s, utm_medium: m, utm_campaign: c, utm_content: ct });
+}
+function uUpdatePreview() {
+  const final = uTaggedUrl();
+  u.preview.innerHTML = final
+    ? `<code style="word-break:break-all">${esc(final)}</code>`
+    : '<span class="pill">Fill destination URL + source, medium, campaign to preview</span>';
+}
+function uCheckExternal() {
+  const url = u.url.value.trim();
+  if (!url) { u.warn.style.display = 'none'; return; }
+  try {
+    const host = new URL(url).hostname;
+    const isMap = /(^|\.)map-india\.org$/i.test(host);
+    if (!isMap) {
+      u.warn.style.display = 'block';
+      u.warn.textContent = `Heads-up: UTMs only register in MAP's GA4 when the visitor lands on map-india.org. ${host} won't be tracked there.`;
+    } else {
+      u.warn.style.display = 'none';
+    }
+  } catch { u.warn.style.display = 'none'; }
+}
+
+u.copyBtn.addEventListener('click', async () => {
+  const final = uTaggedUrl();
+  if (!final) { u.err.textContent = 'Fill the required fields first.'; return; }
+  u.err.textContent = '';
+  try {
+    await navigator.clipboard.writeText(final);
+    const original = u.copyBtn.textContent;
+    u.copyBtn.textContent = '✓ Copied';
+    setTimeout(() => { u.copyBtn.textContent = original; }, 1500);
+  } catch {
+    u.err.textContent = 'Copy failed — select the URL above and copy manually.';
+  }
+});
+
+// Convert UTM → QR: prefill the QR form, switch tab, scroll to top.
+u.qrBtn.addEventListener('click', () => {
+  if (!u.team.value || !u.project.value.trim() || !u.deployment.value || !u.url.value.trim()) {
+    u.err.textContent = 'Fill team, project, deployment, and destination URL before generating a QR.';
+    return;
+  }
+  u.err.textContent = '';
+  document.getElementById('team').value = u.team.value;
+  document.getElementById('project').value = u.project.value;
+  document.getElementById('deployment').value = u.deployment.value;
+  document.getElementById('deployment_detail').value = u.detail.value;
+  document.getElementById('url').value = u.url.value;
+  utmEnabledEl.checked = true;
+  utmSourceEl.value = u.source.value;
+  utmMediumEl.value = u.medium.value;
+  utmCampaignEl.value = u.campaign.value;
+  utmContentEl.value = u.content.value;
+  // Mark touched so QR-tab autofill doesn't overwrite the user's UTM choices.
+  utmTouched.source = utmTouched.medium = utmTouched.campaign = true;
+  if (u.content.value) utmTouched.content = true;
+  updatePreview();
+  updateUtmPreview();
+  checkExternalRule();
+  activateTab('qr');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
 const form = document.getElementById('form');
 const qrBox = document.getElementById('qr');
 const meta = document.getElementById('meta');
