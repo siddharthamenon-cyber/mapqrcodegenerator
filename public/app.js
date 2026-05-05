@@ -1,27 +1,6 @@
 const TEAMS = ['Admin', 'Conservation', 'Design', 'Development', 'Exhibition', 'Inclusion', 'Marcomms', 'Programmes', 'Tech'];
 const DEPLOYMENTS = ['Website', 'Gallery', 'Physical location outside museum', 'Email / Newsletter', 'Print collateral', 'Social media', 'Other'];
 
-// MAP UTM conventions: medium = 'qr' for QR codes; source is qr_<placement>.
-// For UTM-only links the source is the platform (instagram, newsletter, ht, etc.).
-const UTM_SOURCE_BY_DEPLOYMENT_QR = {
-  'Website': 'qr_web',
-  'Gallery': 'qr_gallery',
-  'Physical location outside museum': 'qr_outdoor',
-  'Email / Newsletter': 'qr_email',
-  'Print collateral': 'qr_print',
-  'Social media': 'qr_social',
-  'Other': 'qr',
-};
-const UTM_DEFAULTS_BY_DEPLOYMENT = {
-  'Website':                          { source: 'website',   medium: 'web' },
-  'Gallery':                          { source: 'qr_gallery',medium: 'qr' },
-  'Physical location outside museum': { source: 'qr_outdoor',medium: 'qr' },
-  'Email / Newsletter':               { source: 'newsletter',medium: 'email' },
-  'Print collateral':                 { source: 'qr_print',  medium: 'qr' },
-  'Social media':                     { source: 'instagram', medium: 'social' },
-  'Other':                            { source: '',          medium: '' },
-};
-
 function sanitizeUtm(v) {
   return (v || '').toString().toLowerCase().trim().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
 }
@@ -78,16 +57,38 @@ async function buildQrCanvas(text, logoFile, canvas) {
   }
   return canvas;
 }
-async function copyToClipboard(text, btn) {
+async function copyToClipboard(text, btn, fallbackInput) {
+  const flash = (label) => {
+    if (!btn) return;
+    const original = btn.textContent;
+    btn.textContent = label;
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  };
+  // Modern path
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      flash('✓ Copied');
+      return true;
+    } catch { /* fall through */ }
+  }
+  // Legacy fallback — select the source input (or a temp textarea) and execCommand.
   try {
-    await navigator.clipboard.writeText(text);
-    if (btn) {
-      const original = btn.textContent;
-      btn.textContent = '✓ Copied';
-      setTimeout(() => { btn.textContent = original; }, 1500);
-    }
-    return true;
-  } catch { return false; }
+    const target = fallbackInput || (() => {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      return ta;
+    })();
+    target.focus(); target.select();
+    const ok = document.execCommand('copy');
+    if (target !== fallbackInput) target.remove();
+    if (ok) { flash('✓ Copied'); return true; }
+  } catch { /* ignore */ }
+  flash('✗ Couldn\'t copy');
+  return false;
 }
 
 // =========== Tabs ===========
@@ -211,31 +212,22 @@ const u = {
   newBtn: document.getElementById('u_newBtn'),
 };
 
-const uTouched = { source: false, medium: false, campaign: false, content: false };
-[['source', u.source], ['medium', u.medium], ['campaign', u.campaign], ['content', u.content]].forEach(([k, el]) => {
-  el.addEventListener('input', () => { uTouched[k] = true; });
-});
-
-function uAutofill() {
-  const dep = u.deployment.value;
-  const defaults = UTM_DEFAULTS_BY_DEPLOYMENT[dep] || { source: '', medium: '' };
-  if (!uTouched.medium && defaults.medium) u.medium.value = defaults.medium;
-  if (!uTouched.source && defaults.source) u.source.value = defaults.source;
-  if (!uTouched.campaign && u.project.value.trim()) u.campaign.value = sanitizeUtm(u.project.value);
-  // utm_content is intentionally NOT auto-filled — user must opt in by typing.
+// UTM fields are entered manually — no autofill from team/project/deployment.
+// Sanitisation still happens (lowercase, no spaces, underscores only).
+function uSyncSanitize() {
   u.source.value = sanitizeUtm(u.source.value);
   u.medium.value = sanitizeUtm(u.medium.value);
   u.campaign.value = sanitizeUtm(u.campaign.value);
   u.content.value = sanitizeUtm(u.content.value);
-  uUpdatePreview();
-  uCheckExternal();
 }
-['team', 'project', 'deployment', 'detail', 'url', 'source', 'medium', 'campaign', 'content'].forEach(k => {
-  u[k].addEventListener('input', uAutofill);
-  u[k].addEventListener('change', uAutofill);
+['team', 'project', 'deployment', 'detail', 'url'].forEach(k => {
+  u[k].addEventListener('input', () => { uUpdatePreview(); uCheckExternal(); });
+  u[k].addEventListener('change', () => { uUpdatePreview(); uCheckExternal(); });
 });
-[u.source, u.medium, u.campaign, u.content].forEach(el => {
-  el.addEventListener('blur', () => { el.value = sanitizeUtm(el.value); uUpdatePreview(); });
+['source', 'medium', 'campaign', 'content'].forEach(k => {
+  u[k].addEventListener('input', () => { uUpdatePreview(); });
+  u[k].addEventListener('change', () => { uUpdatePreview(); });
+  u[k].addEventListener('blur', () => { uSyncSanitize(); uUpdatePreview(); });
 });
 
 function uTaggedUrl() {
@@ -282,6 +274,16 @@ async function uSubmit({ withQr }) {
     return;
   }
 
+  // Pre-build the tagged URL and KICK OFF the clipboard write while the user
+  // gesture is still active. Safari/iOS reject writeText if the call starts
+  // after we've awaited a fetch, so we initiate here, await later.
+  const taggedClient = uTaggedUrl();
+  let copyPromise = null;
+  if (!withQr && taggedClient && navigator.clipboard?.writeText) {
+    copyPromise = navigator.clipboard.writeText(taggedClient);
+    copyPromise.catch(() => {}); // pre-attach to avoid unhandled rejection warning
+  }
+
   const btn = withQr ? u.qrBtn : u.saveBtn;
   const original = btn.textContent;
   btn.disabled = true; btn.textContent = 'Saving…';
@@ -324,28 +326,40 @@ async function uSubmit({ withQr }) {
     } else {
       u.qrWrap.hidden = true;
       u.downloadBtn.hidden = true;
-      // Auto-copy the UTM tagged URL on Save & Copy (per spec).
-      copyToClipboard(u.resultTagged.value, u.saveBtn);
+      // Resolve the clipboard write started inside the gesture above.
+      let copied = false;
+      if (copyPromise) {
+        try { await copyPromise; copied = true; } catch { copied = false; }
+      }
+      if (copied) {
+        btn.textContent = '✓ Saved & copied';
+      } else {
+        // Fallback: select the URL so ⌘C / Ctrl+C works one keystroke away.
+        u.resultTagged.focus();
+        u.resultTagged.select();
+        u.err.textContent = 'Saved. Auto-copy was blocked by the browser — the URL is selected: press ⌘C / Ctrl+C, or click the Copy button next to it.';
+        btn.textContent = '✓ Saved';
+      }
+      setTimeout(() => { btn.textContent = original; }, 1800);
     }
 
     loadCodes();
   } catch (err) {
     u.err.textContent = err.message;
+    btn.textContent = original;
   } finally {
-    btn.disabled = false; btn.textContent = original;
+    btn.disabled = false;
   }
 }
 
 u.saveBtn.addEventListener('click', () => uSubmit({ withQr: false }));
 u.qrBtn.addEventListener('click', () => uSubmit({ withQr: true }));
-u.copyTracked.addEventListener('click', () => copyToClipboard(u.resultTracked.value, u.copyTracked));
-u.copyTagged.addEventListener('click', () => copyToClipboard(u.resultTagged.value, u.copyTagged));
+u.copyTracked.addEventListener('click', () => copyToClipboard(u.resultTracked.value, u.copyTracked, u.resultTracked));
+u.copyTagged.addEventListener('click', () => copyToClipboard(u.resultTagged.value, u.copyTagged, u.resultTagged));
 u.newBtn.addEventListener('click', () => {
   u.resultEmpty.hidden = false;
   u.resultLive.hidden = true;
   document.getElementById('utmForm').reset();
-  uTouched.source = uTouched.medium = uTouched.campaign = uTouched.content = false;
-  u.medium.value = '';
   uUpdatePreview();
   uCheckExternal();
 });
