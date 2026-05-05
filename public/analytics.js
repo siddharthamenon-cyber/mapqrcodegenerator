@@ -6,11 +6,42 @@ function esc(s) {
   }[c]));
 }
 
+function csvEscape(v) {
+  const s = (v == null ? '' : String(v));
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+function downloadCsv(filename, rows) {
+  const blob = new Blob(['﻿' + rows.map(r => r.map(csvEscape).join(',')).join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+let currentData = null;
+document.getElementById('exportScansBtn').addEventListener('click', () => {
+  if (!currentData) return;
+  const c = currentData.code;
+  const header = ['Scanned at (ISO)', 'Scanned at (local)', 'IP', 'User agent', 'Referer'];
+  const rows = currentData.recent_scans.map(s => [
+    new Date(s.scanned_at).toISOString(),
+    new Date(s.scanned_at).toLocaleString(),
+    s.ip || '',
+    s.user_agent || '',
+    s.referer || '',
+  ]);
+  const stamp = new Date().toISOString().slice(0, 10);
+  const slug = (c.project || c.id).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+  downloadCsv(`scans-${slug}-${c.id}-${stamp}.csv`, [header, ...rows]);
+});
+
 (async () => {
   if (!id) { document.getElementById('title').textContent = 'Missing id'; return; }
   const res = await fetch(`/api/stats/${id}`);
   if (!res.ok) { document.getElementById('title').textContent = 'Not found'; return; }
   const d = await res.json();
+  currentData = d;
   const c = d.code;
 
   document.getElementById('title').textContent = c.project || c.label || `QR ${c.id}`;

@@ -36,7 +36,10 @@
   </div>
 
   <div class="card">
-    <h3 style="margin:0 0 10px">Recent scans</h3>
+    <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:8px">
+      <h3 style="margin:0">Recent scans</h3>
+      <button type="button" id="exportScansBtn" class="secondary">⬇︎ Export CSV</button>
+    </div>
     <div class="table-wrap">
       <table class="table" id="recent">
         <thead><tr><th>When</th><th>IP</th><th>User agent</th><th>Referer</th></tr></thead>

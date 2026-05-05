@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="robots" content="noindex, nofollow" />
 <meta name="googlebot" content="noindex, nofollow" />
-<title>MAP QR Generator + Analytics</title>
+<title>UTM & QR Code Builder</title>
 <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
@@ -16,110 +16,18 @@
            onerror="this.outerHTML='<div class=&quot;fallback&quot;>MAP<small>Museum of Art &amp; Photography</small></div>'" />
     </div>
     <div class="titles">
-      <h1>QR Generator</h1>
-      <div class="sub">Trackable QR codes with structured naming and built-in scan analytics</div>
+      <h1>UTM &amp; QR Code Builder</h1>
+      <div class="sub">Build trackable links and QR codes with structured naming and built-in scan analytics</div>
     </div>
   </div>
 
   <div class="tabs" role="tablist">
-    <button class="tab active" type="button" data-tab="qr" role="tab">📱 QR Generator</button>
-    <button class="tab" type="button" data-tab="utm" role="tab">🔗 UTM Builder</button>
+    <button class="tab active" type="button" data-tab="utm" role="tab">🔗 UTM Builder</button>
+    <button class="tab" type="button" data-tab="qr" role="tab">📱 QR Code Generator</button>
   </div>
 
-  <div class="tab-panel" id="panel-qr">
-  <div class="grid">
-    <div class="card">
-      <form id="form">
-        <label for="team">Team</label>
-        <select id="team" required>
-          <option value="">Select team…</option>
-        </select>
-
-        <label for="project">Project name</label>
-        <input type="text" id="project" placeholder="e.g. Visible / Invisible exhibition" required />
-
-        <div class="two">
-          <div>
-            <label for="deployment">Deployment location</label>
-            <select id="deployment" required>
-              <option value="">Select…</option>
-            </select>
-          </div>
-          <div>
-            <label for="deployment_detail">Specifics (optional)</label>
-            <input type="text" id="deployment_detail" placeholder="e.g. Gallery 3, Cubbon Park kiosk, IG bio" />
-          </div>
-        </div>
-
-        <label for="url">Destination URL</label>
-        <input type="url" id="url" placeholder="https://map-india.org/..." required />
-        <div id="urlWarning" class="warn" style="display:none"></div>
-
-        <div class="utm-block">
-          <label class="row" style="justify-content:space-between;align-items:center;margin-top:14px">
-            <span style="display:flex;align-items:center;gap:8px;color:var(--text);font-weight:600;font-size:14px">
-              UTM tracking <span class="pill">recommended for GA4</span>
-            </span>
-            <span class="row" style="gap:6px"><input type="checkbox" id="utmEnabled" checked style="width:auto" /> <span style="font-size:12px">Enabled</span></span>
-          </label>
-          <div id="utmFields">
-            <div class="two">
-              <div>
-                <label for="utm_source">utm_source <span class="hint">where</span></label>
-                <input type="text" id="utm_source" placeholder="qr_gallery" />
-              </div>
-              <div>
-                <label for="utm_medium">utm_medium <span class="hint">how</span></label>
-                <input type="text" id="utm_medium" placeholder="qr" />
-              </div>
-            </div>
-            <div class="two">
-              <div>
-                <label for="utm_campaign">utm_campaign <span class="hint">what</span></label>
-                <input type="text" id="utm_campaign" placeholder="holi_2026" />
-              </div>
-              <div>
-                <label for="utm_content">utm_content <span class="hint">which (optional)</span></label>
-                <input type="text" id="utm_content" placeholder="entrance_poster" />
-              </div>
-            </div>
-            <label>Final tagged URL</label>
-            <div class="preview" id="utmPreview"><span class="pill">Fill destination + UTM fields to preview</span></div>
-            <div class="rules">
-              <span class="rule">no caps</span>
-              <span class="rule">no spaces</span>
-              <span class="rule">underscores only</span>
-              <span class="rule">external links only</span>
-            </div>
-          </div>
-        </div>
-
-        <label for="logo">Logo (optional, PNG/JPG, centered on QR)</label>
-        <input type="file" id="logo" accept="image/*" />
-
-        <label>Generated QR name</label>
-        <div class="preview" id="namePreview"><span class="pill">Fill in the fields above to preview</span></div>
-
-        <div style="margin-top:18px" class="row">
-          <button type="submit" id="submit">Generate QR</button>
-          <span class="pill">High error-correction so logo doesn't break scanning</span>
-        </div>
-        <div class="err" id="err"></div>
-      </form>
-    </div>
-
-    <div class="card">
-      <div class="qr" id="qr"><span style="color:var(--muted);font-size:13px">Your QR will appear here</span></div>
-      <div class="meta" id="meta"></div>
-      <div class="actions" id="actions" style="display:none">
-        <a class="btn primary" id="analyticsBtn" href="#">📊 View Analytics</a>
-        <a class="btn outline" id="downloadBtn" href="#" download>⬇︎ Download PNG</a>
-      </div>
-    </div>
-  </div>
-  </div><!-- /panel-qr -->
-
-  <div class="tab-panel" id="panel-utm" hidden>
+  <!-- ============ UTM BUILDER ============ -->
+  <div class="tab-panel" id="panel-utm">
     <div class="grid">
       <div class="card">
         <form id="utmForm">
@@ -136,7 +44,7 @@
             </div>
             <div>
               <label for="u_deployment_detail">Specifics (optional)</label>
-              <input type="text" id="u_deployment_detail" placeholder="e.g. Instagram bio, December newsletter" />
+              <input type="text" id="u_deployment_detail" placeholder="e.g. Instagram bio, Dec newsletter" />
             </div>
           </div>
 
@@ -145,7 +53,7 @@
           <div id="u_urlWarning" class="warn" style="display:none"></div>
 
           <div class="utm-block" style="margin-top:6px">
-            <div style="font-weight:600;font-size:14px;color:var(--text);margin-bottom:6px">UTM parameters</div>
+            <div style="font-weight:600;font-size:15px;color:var(--text);margin-bottom:6px">UTM parameters</div>
             <div class="two">
               <div>
                 <label for="u_utm_source">utm_source <span class="hint">where</span></label>
@@ -174,45 +82,136 @@
             </div>
           </div>
 
-          <label>Tagged URL</label>
+          <label for="u_logo">Logo for QR (optional, only used if you generate a QR)</label>
+          <input type="file" id="u_logo" accept="image/*" />
+
+          <label>Tagged URL preview</label>
           <div class="preview" id="u_preview"><span class="pill">Fill the fields above to preview</span></div>
 
           <div class="row" style="margin-top:18px;gap:8px">
-            <button type="button" id="u_copyBtn">📋 Copy tagged URL</button>
-            <button type="button" id="u_qrBtn" class="secondary">📱 Generate as QR →</button>
+            <button type="button" id="u_saveBtn">💾 Save &amp; copy tracked link</button>
+            <button type="button" id="u_qrBtn" class="secondary">📱 Save &amp; generate as QR</button>
           </div>
           <div class="err" id="u_err"></div>
         </form>
       </div>
 
-      <div class="card">
-        <div style="font-size:13px;color:var(--muted);margin-bottom:8px">How to use a tagged URL</div>
-        <ol style="margin:0;padding-left:18px;font-size:13px;line-height:1.7;color:var(--text)">
-          <li>Build the link with the form on the left.</li>
-          <li>Click <strong>Copy tagged URL</strong>, paste into Mailchimp, Linktree, ad copy, or wherever the link lives.</li>
-          <li>Going on a printed flyer or wall? Click <strong>Generate as QR</strong> — it switches to the QR Generator with everything prefilled.</li>
-          <li>Update the tracker with status, owner, and date-live.</li>
-        </ol>
-        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);font-size:12px;color:var(--muted)">
-          UTMs only register in MAP's GA4 when the visitor lands on <code>map-india.org</code>. External destinations (Linktree, partner sites) won't be tracked there.
+      <div class="card" id="u_resultCard">
+        <div id="u_resultEmpty" style="font-size:14px;color:var(--muted)">
+          <strong style="color:var(--text)">How this works</strong>
+          <ol style="margin:10px 0 0;padding-left:20px;line-height:1.7">
+            <li>Fill the form on the left.</li>
+            <li>Click <strong>Save &amp; copy</strong> to get a tracked link with built-in analytics — paste it into Mailchimp, Linktree, ad copy, or anywhere.</li>
+            <li>Or click <strong>Save &amp; generate as QR</strong> to also get a downloadable QR code for printed flyers or wall placement.</li>
+            <li>Every saved link shows up below with scan counts and analytics.</li>
+          </ol>
+          <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);font-size:13px">
+            UTMs only register in MAP's GA4 when the visitor lands on <code>map-india.org</code>. External destinations (Linktree, partner sites) won't be tracked there.
+          </div>
+        </div>
+
+        <div id="u_resultLive" hidden>
+          <div style="font-size:13px;color:var(--muted)">Saved</div>
+          <div id="u_resultLabel" style="font-weight:600;font-size:16px;margin-top:2px;color:var(--text)"></div>
+
+          <label style="margin-top:14px">Tracked link <span class="hint">use this for analytics</span></label>
+          <div class="copy-row">
+            <input type="text" id="u_resultTracked" readonly />
+            <button type="button" id="u_copyTracked">Copy</button>
+          </div>
+
+          <label>Direct tagged URL <span class="hint">no scan tracking, GA4 only</span></label>
+          <div class="copy-row">
+            <input type="text" id="u_resultTagged" readonly />
+            <button type="button" id="u_copyTagged" class="secondary">Copy</button>
+          </div>
+
+          <div id="u_qrWrap" hidden style="margin-top:16px">
+            <div class="qr"><canvas id="u_qrCanvas"></canvas></div>
+          </div>
+
+          <div class="actions" style="margin-top:14px">
+            <a class="btn primary" id="u_analyticsBtn" href="#">📊 View analytics</a>
+            <a class="btn outline" id="u_downloadBtn" href="#" download hidden>⬇︎ Download QR PNG</a>
+            <button type="button" class="secondary" id="u_newBtn">＋ New link</button>
+          </div>
         </div>
       </div>
     </div>
   </div><!-- /panel-utm -->
 
+  <!-- ============ QR GENERATOR ============ -->
+  <div class="tab-panel" id="panel-qr" hidden>
+    <div class="grid">
+      <div class="card">
+        <form id="form">
+          <label for="team">Team</label>
+          <select id="team" required>
+            <option value="">Select team…</option>
+          </select>
+
+          <label for="project">Project name</label>
+          <input type="text" id="project" placeholder="e.g. Visible / Invisible exhibition" required />
+
+          <div class="two">
+            <div>
+              <label for="deployment">Deployment location</label>
+              <select id="deployment" required>
+                <option value="">Select…</option>
+              </select>
+            </div>
+            <div>
+              <label for="deployment_detail">Specifics (optional)</label>
+              <input type="text" id="deployment_detail" placeholder="e.g. Gallery 3, Cubbon Park kiosk" />
+            </div>
+          </div>
+
+          <label for="url">Destination URL</label>
+          <input type="url" id="url" placeholder="https://map-india.org/..." required />
+
+          <label for="logo">Logo (optional, PNG/JPG, centered on QR)</label>
+          <input type="file" id="logo" accept="image/*" />
+
+          <label>Generated QR name</label>
+          <div class="preview" id="namePreview"><span class="pill">Fill in the fields above to preview</span></div>
+
+          <div style="margin-top:18px" class="row">
+            <button type="submit" id="submit">Generate QR</button>
+            <span class="pill">Need UTM tracking? Use the UTM Builder tab above</span>
+          </div>
+          <div class="err" id="err"></div>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="qr" id="qr"><span style="color:var(--muted);font-size:14px">Your QR will appear here</span></div>
+        <div class="meta" id="meta"></div>
+        <div class="actions" id="actions" style="display:none">
+          <a class="btn primary" id="analyticsBtn" href="#">📊 View Analytics</a>
+          <a class="btn outline" id="downloadBtn" href="#" download>⬇︎ Download PNG</a>
+        </div>
+      </div>
+    </div>
+  </div><!-- /panel-qr -->
+
+  <!-- ============ LISTING ============ -->
   <div class="card" style="margin-top:20px">
-    <div class="row" style="justify-content:space-between">
-      <h3 style="margin:0">Your QR codes</h3>
-      <button type="button" id="refresh" class="secondary">Refresh</button>
+    <div class="row" style="justify-content:space-between;gap:8px">
+      <h3 style="margin:0">Saved links &amp; QR codes</h3>
+      <div class="row" style="gap:6px">
+        <button type="button" id="exportBtn" class="secondary">⬇︎ Export CSV</button>
+        <button type="button" id="refresh" class="secondary">Refresh</button>
+      </div>
     </div>
     <div class="filters">
       <select id="filterTeam"><option value="">All teams</option></select>
       <select id="filterDeployment"><option value="">All deployments</option></select>
-      <input type="text" id="filterSearch" placeholder="Search project…" />
+      <select id="filterType"><option value="">All types</option><option value="utm">UTM only</option><option value="qr">Has QR</option></select>
+      <input type="text" id="filterSearch" placeholder="Search project or campaign…" />
     </div>
     <div class="table-wrap">
       <table class="table" id="codes">
-        <thead><tr><th>Team</th><th>Project</th><th>Deployment</th><th>Scans</th><th>Last scan</th><th>Created</th><th></th></tr></thead>
+        <thead><tr><th>Team</th><th>Project</th><th>Deployment</th><th>Campaign</th><th>Scans</th><th>Last scan</th><th>Created</th><th></th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
